@@ -16,7 +16,7 @@ const DetectionHistory = sequelize.define("DetectionHistory", {
     allowNull: false, 
   },
   result: {
-    type: DataTypes.ENUM("brown spots", "healthy", "white scale"),
+    type: DataTypes.ENUM("Brown Spot", "Healthy", "White Scale"),
     allowNull: false,
   },
   recommendation: {

@@ -5,17 +5,23 @@ const path = require("path");
 exports.getAllArticles = async (req, res) => {
 	try {
 		if (req.user.role === "admin") {
-			const articles = await Article.findAll({
+			const data = await Article.findAll({
 				order: [["created_at", "DESC"]],
 			});
-			return res.status(200).json(articles);
+			return res.status(200).json({
+				message: "Article successfully retrieved",
+				data,
+			});
 		}
 
-		const articles = await Article.findAll({
+		const data = await Article.findAll({
 			where: { is_published: true },
 			order: [["created_at", "DESC"]],
 		});
-		res.status(200).json(articles);
+		return res.status(200).json({
+			message: "Article successfully retrieved",
+			data,
+		});
 	} catch (error) {
 		res.status(500).json({ message: error.message });
 	}
@@ -26,23 +32,29 @@ exports.getArticleById = async (req, res) => {
 		const { id } = req.params;
 
 		if (req.user.role === "admin") {
-			const article = await Article.findByPk(id);
-			if (!article) {
+			const data = await Article.findByPk(id);
+			if (!data) {
 				return res.status(404).json({ message: "Article not found" });
 			}
-			return res.status(200).json(article);
+			return res.status(200).json({
+				message: "Article successfully retrieved",
+				data,
+			});
 		}
 
-		const article = await Article.findOne({
+		const data = await Article.findOne({
 			where: { id, is_published: true },
 		});
-		if (!article) {
+		if (!data) {
 			return res
 				.status(404)
 				.json({ message: "Article not found or not published" });
 		}
 
-		res.status(200).json(article);
+		return res.status(200).json({
+			message: "Article successfully retrieved",
+			data,
+		});
 	} catch (error) {
 		res.status(500).json({ message: error.message });
 	}
@@ -54,6 +66,7 @@ exports.createArticle = async (req, res) => {
 
 		let image_url = null;
 		if (req.file) {
+			// image_url = path.join(uploadArticle, req.file.filename);
 			image_url = `../../../../public/uploads/images/${req.file.filename}`;
 		}
 
@@ -67,7 +80,7 @@ exports.createArticle = async (req, res) => {
 			}
 		}
 
-		const article = await Article.create({
+		const data = await Article.create({
 			title,
 			content,
 			author: req.user.name,
@@ -78,7 +91,7 @@ exports.createArticle = async (req, res) => {
 
 		res.status(201).json({
 			message: "Article successfully created",
-			article,
+			data,
 		});
 	} catch (error) {
 		console.error(error);
@@ -97,24 +110,24 @@ exports.updateArticle = async (req, res) => {
 		const { id } = req.params;
 		const { title, content, tags, is_published } = req.body;
 
-		const article = await Article.findByPk(id);
-		if (!article) {
+		const data = await Article.findByPk(id);
+		if (!data) {
 			return res.status(404).json({ message: "Article not found" });
 		}
 
-		article.title = title || article.title;
-		article.content = content || article.content;
-		article.tags = tags || article.tags;
-		article.is_published =
-			is_published !== undefined ? is_published : article.is_published;
+		data.title = title || data.title;
+		data.content = content || data.content;
+		data.tags = tags || data.tags;
+		data.is_published = is_published !== undefined ? is_published : data.is_published;
+
 
 		if (req.file) {
-			article.image_url = `../../../../public/uploads/images/${req.file.filename}`; // Update image jika ada
+			data.image_url = `../../../../public/uploads/images/${req.file.filename}`;
 		}
 
-		await article.save();
+		await data.save();
 
-		res.status(200).json({ message: "Article updated successfully", article });
+		res.status(200).json({ message: "Article updated successfully", data });
 	} catch (error) {
 		res.status(500).json({ message: error.message });
 	}
@@ -133,7 +146,7 @@ exports.deleteArticle = async (req, res) => {
 		// ngecek artikel memiliki gambar atau tidak, kalo ada diapus
 		if (article.image_url) {
 			const imagePath = path.join(
-				__dirname,
+				// __dirname,
 				"../../../../public/uploads/images",
 				path.basename(article.image_url)
 			);

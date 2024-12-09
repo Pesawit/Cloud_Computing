@@ -2,13 +2,36 @@ const fs = require('fs');
 const path = require('path');
 const User = require('./model');
 
+exports.getProfile = async (req, res) => {
+  try {
+    const userId = req.user.id; 
+
+    const user = await User.findOne({
+      where: { id: userId },
+      attributes: ["id", "email", "name", "role", "photo"], 
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "User profile retrieved successfully",
+      data: user,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
     const { name } = req.body; 
-    const user = await User.findByPk(userId);
+    const data = await User.findByPk(userId);
 
-    if (!user) {
+    if (!data) {
       return res.status(404).json({ message: "User not found" });
     }
 
@@ -18,11 +41,10 @@ exports.updateProfile = async (req, res) => {
       newPhotoPath = `../../../../public/uploads/profile/${req.file.filename}`;
 
       // Hapus foto lama jika bukan default
-      if (user.photo !== "../../../../public/uploads/profile/default-profile.png") {
+      if (data.photo !== "../../../../public/uploads/profile/default-profile.png") {
         const oldPhotoPath = path.join(
-          __dirname,
           "../../../../public/uploads/profile",
-          path.basename(user.photo)
+          path.basename(data.photo)
         );
         if (fs.existsSync(oldPhotoPath)) {
           fs.unlinkSync(oldPhotoPath); 
@@ -30,17 +52,17 @@ exports.updateProfile = async (req, res) => {
       }
     }
 
-    user.name = name || user.name;
-    user.photo = newPhotoPath || user.photo;
+    data.name = name || data.name;
+    data.photo = newPhotoPath || data.photo;
 
-    await user.save();
+    await data.save();
 
     res.status(200).json({
       message: "Profile updated successfully",
-      user: {
-        id: user.id,
-        name: user.name,
-        photo: user.photo,
+      data: {
+        id: data.id,
+        name: data.name,
+        photo: data.photo,
       },
     });
   } catch (error) {
